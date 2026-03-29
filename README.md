@@ -8,7 +8,7 @@
 
 ---
 
-## LLM 训练推理
+## LLM 训练推理（Training & Inference）
 
 > 聚焦于如何构建和优化最先进的 LLM。
 
@@ -81,7 +81,7 @@
 
 ---
 
-## LLM 应用
+## LLM 应用（Agent）
 
 > 截至 2026 年上半年，LLM 应用的核心范式已从"检索增强生成"全面转向 **AI Agent（智能体）**。对绝大多数人来说，这一章是影响最大的部分——无论你是开发者还是普通用户，Agent 正在重新定义人与 AI 的交互方式。以 **Claude Code**（Anthropic 出品的 Agentic 编程工具，GitHub 84k+ star）和 **OpenClaw**（开源个人 AI 助手，可通过 WhatsApp/Telegram/Discord 等聊天应用与你交互）为代表，Agent 已不再是概念验证，而是每天真实运行、替代大量人类工作的生产力工具。RAG、向量数据库等技术并未消失，但它们已降级为 Agent 系统内部的一个子模块，而非应用层的主角。
 
