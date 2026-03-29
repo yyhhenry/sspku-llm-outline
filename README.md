@@ -162,8 +162,8 @@
 ### 插件与集成（Plugins & Integrations）
 
 - 插件系统：通过插件分发 Skills、Subagents、Hooks
-- 通信渠道集成（WhatsApp、Telegram、Discord、Slack、iMessage）
-- 外部服务集成（Gmail、GitHub、Calendar、Obsidian、Spotify 等）
+- 通信渠道集成（Telegram、Discord、飞书）
+- 外部服务集成（Gmail、GitHub、Calendar 等）
 - 定时任务与主动触发（Cron Jobs、Heartbeat、Webhook）
 
 ### 代表性产品
