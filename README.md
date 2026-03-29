@@ -2,9 +2,9 @@
 
 ## 专题章节
 
-- [量化Lab](topics/quant/README.md) by Wang
+- [量化Lab](topics/quant/) by Wang
 - [Tokenizer详解](topics/Tokenizer.md) by Yan
-- [并行策略](topics/mlp-lab-sp/README.md) by Wang
+- [并行策略](topics/mlp-lab-sp/) by Wang
 
 ## 前置知识
 
