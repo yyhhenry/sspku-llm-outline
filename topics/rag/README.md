@@ -67,7 +67,10 @@ RAG 技术本质是为大模型配置“外接知识库”，通过“检索-增
 
 ## 手动实现
 
-参考代码：yyhhenry/llm-lab-naive-rag。
+```bash
+curl -L -o Qwen3Tokenizer.local.json "https://huggingface.co/Qwen/Qwen3-8B/resolve/main/tokenizer.json"
+uv run rag_lab.py
+```
 
 使用 Python 代码来编写简单的 RAG 系统，从 PDF 加载数据，用 tokenizer 来更均匀地进行前面说的滑动窗口切分；随后调用 OpenRouter 上的 Qwen Embedding 8B 作为嵌入模型，然后使用 lab-1806-vec-db 作为向量数据库（建议读者用 Chroma 重新编写），把每一个 chunk 嵌入为向量表示然后存储。
 
