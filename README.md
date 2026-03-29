@@ -31,7 +31,6 @@
   - MHA（Multi-Head Attention）
   - GQA（Grouped Query Attention）
   - SWA（Sliding Window Attention）
-- MTP（Multi-Token Prediction）
 - MoE（Mixture of Experts）
   - Expert Parallelism 设计
   - 多卡部署与推理
@@ -47,7 +46,7 @@
 
 ### 预训练（Pretrain）
 
-- 分布式训练：数据并行(DP)、流水线并行(PP)、张量并行(TP)
+- 分布式训练：数据并行（DP）、流水线并行（PP）、张量并行（TP）
 - 优化技巧：学习率调度、混合精度训练、梯度裁剪
 - 优化器：Adam、Muon
 - 框架：Megatron-LM
@@ -67,8 +66,8 @@
 
 ### 推理优化（Inference）
 
-- KV Cache
-- Paged Attention
+- KV Cache & Paged Attention
+- MTP（Multi-Token Prediction）
 - 算子：`flash_attn`、`flashinfer`、`triton`
 - 推理框架：SGLang、vLLM
 - 量化
