@@ -239,6 +239,10 @@ def cli(
         "data/vector_db",
         help="Path to the vector database directory",
     ),
+    interactive: bool = typer.Option(
+        True,
+        help="Whether to enter interactive query mode after setting up the collection",
+    ),
 ):
     vec_db = VecDB(vec_db_path)
     client = OpenAI(
@@ -254,12 +258,33 @@ def cli(
         force_recreate_collection,
     )
 
+    if not interactive:
+        query = "介绍 MiMo-V2-Flash 使用 MTP 的情况"
+        print(f"Running sample query: {query}")
+        print("Answer:")
+        rag_query(
+            vec_db,
+            client,
+            model_name,
+            embed_model_name,
+            collection_name,
+            query,
+        )
+        return
+
     while True:
         query = input("Enter your query (or 'exit' to quit): ")
         if query.lower() == "exit":
             break
         print("Answer:")
-        rag_query(vec_db, client, model_name, embed_model_name, collection_name, query)
+        rag_query(
+            vec_db,
+            client,
+            model_name,
+            embed_model_name,
+            collection_name,
+            query,
+        )
 
 
 def main():
