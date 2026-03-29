@@ -122,7 +122,10 @@
 
 ### 准备
 
-- 仓库已附带一份 Qwen3 的 tokenizer 配置副本：`./Qwen3Tokenizer.json`。
+- 需要自行下载 Qwen3 的 tokenizer 配置文件，保存为 `./Qwen3Tokenizer.local.json`：
+  ```bash
+  curl -L -o Qwen3Tokenizer.local.json "https://huggingface.co/Qwen/Qwen3-8B/resolve/main/tokenizer.json"
+  ```
 - 使用 HuggingFace 的 tokenizers 库单独加载这份 Qwen3 tokenizer。
 - 提取并分析预分词使用的 Regex，借助大模型理解其中规则和逻辑，以更好分析分词行为。
 - 理解 json 文件中 `vocabs`、`merges` 字段代表的含义，可能需要阅读 tokenizers 库代码。
@@ -142,14 +145,14 @@
 
 ### 参考结果
 
-仓库内有一份可直接运行的单文件示例：`./example_qwen3_tokenizer.py`。下面代码与该文件保持一致，并使用真实的相对路径加载本目录下的 `Qwen3Tokenizer.json`。
+仓库内有一份可直接运行的单文件示例：`./example_qwen3_tokenizer.py`。下面代码与该文件保持一致，并使用真实的相对路径加载本目录下的 `Qwen3Tokenizer.local.json`。
 
 ```python
 from pathlib import Path
 
 from tokenizers import Encoding, Tokenizer
 
-tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.json")
+tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.local.json")
 
 tokenizer: Tokenizer = Tokenizer.from_file(str(tokenizer_path))
 
@@ -172,7 +175,7 @@ print(f"{tokens_as_str=}")
 
 预分词策略：可选的空格，一个可选符号加一些字母或汉字；标点只能与标点合并或后接换行；代码标识符不分驼峰；单个数字为 token。具体可以让大模型分析。
 
-```jsonc
+```json
 {
   // ...
   "pre_tokenizer": {

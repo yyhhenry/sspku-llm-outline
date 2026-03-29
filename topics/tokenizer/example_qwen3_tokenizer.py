@@ -2,7 +2,8 @@ from pathlib import Path
 
 from tokenizers import Encoding, Tokenizer
 
-tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.json")
+# Qwen3Tokenizer.local.json 需要自行下载，参考 README.md 中的下载命令
+tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.local.json")
 
 tokenizer: Tokenizer = Tokenizer.from_file(str(tokenizer_path))
 

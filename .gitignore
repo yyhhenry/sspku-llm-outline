@@ -1,3 +1,6 @@
+# Local files (user-specific, not tracked)
+*.local.*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
