@@ -175,7 +175,7 @@ print(f"{tokens_as_str=}")
 
 预分词策略：可选的空格，一个可选符号加一些字母或汉字；标点只能与标点合并或后接换行；代码标识符不分驼峰；单个数字为 token。具体可以让大模型分析。
 
-```json
+```jsonc
 {
   // ...
   "pre_tokenizer": {
@@ -184,19 +184,19 @@ print(f"{tokens_as_str=}")
       {
         "type": "Split",
         "pattern": {
-          "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
+          "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
         },
         "behavior": "Isolated",
-        "invert": false
+        "invert": false,
       },
       {
         "type": "ByteLevel",
         "add_prefix_space": false,
         "trim_offsets": false,
-        "use_regex": false
-      }
-    ]
-  }
+        "use_regex": false,
+      },
+    ],
+  },
   // ...
 }
 ```
