@@ -1,0 +1,9 @@
+[project]
+name = "tokenizer-lab"
+version = "0.1.0"
+description = "Tokenizer Lab"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "tokenizers>=0.22.2",
+]

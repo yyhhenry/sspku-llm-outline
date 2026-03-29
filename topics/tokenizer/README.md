@@ -67,8 +67,8 @@
 - 对于效果的控制。
   - 很多模型会用预分词控制词表的组成。
   - 例如 Qwen 的词表规定数字必须单独作为一个 token，这或许对小参数模型正确处理数学问题提供了帮助。
-  - 其他一些常见模型，如 gpt-4o 的词表 o200k，则规定每 3 个数字作为一个 token。例如一个年月日信息 `2025年 11月 6日` 会被分词为 `["202", "5", "年", "11", "月", "6", "日"]`。
-  - 其他常见规则还包括：单个符号可以和单词预分词为一个 word，一些符号后面跟着一些换行也可以是一个 word；而对于代码场景的驼峰表达，o200k 规定一个大写字母与后面的小写字母组合成一个 word，连续的大写字母是一个 word。例如 `HashMap` 会被分词为 `["Hash", "Map"]`，而 `HASH_MAP` 则是 `["HASH", "_MAP"]`。
+  - 其他一些常见模型，如 gpt-4o 的词表 o200k，则规定每 3 个数字作为一个 token。例如一个年月日信息 `2025年 11月 6日` 会被分词为 `['202', '5', '年', '11', '月', '6', '日']`。
+  - 其他常见规则还包括：单个符号可以和单词预分词为一个 word，一些符号后面跟着一些换行也可以是一个 word；而对于代码场景的驼峰表达，o200k 规定一个大写字母与后面的小写字母组合成一个 word，连续的大写字母是一个 word。例如 `HashMap` 会被分词为 `['Hash', 'Map']`，而 `HASH_MAP` 则是 `['HASH', '_MAP']`。
 
 **构建优化**:
 
@@ -122,8 +122,8 @@
 
 ### 准备
 
-- 手动下载 https://huggingface.co/Qwen/Qwen3-0.6B
-- 使用 HuggingFace 的 tokenizers 库单独加载 Qwen3 的 tokenizer。
+- 仓库已附带一份 Qwen3 的 tokenizer 配置副本：`./Qwen3Tokenizer.json`。
+- 使用 HuggingFace 的 tokenizers 库单独加载这份 Qwen3 tokenizer。
 - 提取并分析预分词使用的 Regex，借助大模型理解其中规则和逻辑，以更好分析分词行为。
 - 理解 json 文件中 `vocabs`、`merges` 字段代表的含义，可能需要阅读 tokenizers 库代码。
 
@@ -142,12 +142,16 @@
 
 ### 参考结果
 
+仓库内有一份可直接运行的单文件示例：`./example_qwen3_tokenizer.py`。下面代码与该文件保持一致，并使用真实的相对路径加载本目录下的 `Qwen3Tokenizer.json`。
+
 ```python
+from pathlib import Path
+
 from tokenizers import Encoding, Tokenizer
 
-tokenizer_path = "你的路径/Qwen/Qwen3-0.6B/tokenizer.json"
+tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.json")
 
-tokenizer: Tokenizer = Tokenizer.from_file(tokenizer_path)
+tokenizer: Tokenizer = Tokenizer.from_file(str(tokenizer_path))
 
 text = "你好，世界！"
 encoding: Encoding = tokenizer.encode(text)
@@ -177,19 +181,19 @@ print(f"{tokens_as_str=}")
       {
         "type": "Split",
         "pattern": {
-          "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+",
+          "Regex": "(?i:'s|'t|'re|'ve|'m|'ll|'d)|[^\\r\\n\\p{L}\\p{N}]?\\p{L}+|\\p{N}| ?[^\\s\\p{L}\\p{N}]+[\\r\\n]*|\\s*[\\r\\n]+|\\s+(?!\\S)|\\s+"
         },
         "behavior": "Isolated",
-        "invert": false,
+        "invert": false
       },
       {
         "type": "ByteLevel",
         "add_prefix_space": false,
         "trim_offsets": false,
-        "use_regex": false,
-      },
-    ],
-  },
+        "use_regex": false
+      }
+    ]
+  }
   // ...
 }
 ```
