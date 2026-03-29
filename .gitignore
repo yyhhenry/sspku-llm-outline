@@ -1,5 +1,6 @@
 # Local files (user-specific, not tracked)
 *.local.*
+*.local/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
