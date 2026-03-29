@@ -5,6 +5,7 @@
 - [量化Lab](topics/quant/) by Wang
 - [Tokenizer详解](topics/tokenizer/) by Yan
 - [并行策略](topics/mlp-lab-sp/) by Wang
+- [RAG系统](topics/rag/) by Yan
 
 ## 前置知识
 
