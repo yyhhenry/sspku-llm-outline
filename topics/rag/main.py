@@ -1,83 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import tokenizers
+import typer
 from lab_1806_vec_db import VecDB
 from openai import OpenAI
-from pydantic import BaseModel
 
 global_vec_db = VecDB("data/vector_db")
-
-
-class Args(BaseModel):
-    api_key_file: str
-    base_url: str
-    model_name: str
-    embed_model_name: str
-    collection_name: str
-    collection_files_glob: str
-    force_recreate_collection: bool
-    interactive: bool
-
-    @classmethod
-    def parse_args(cls) -> "Args":
-        import argparse
-
-        parser = argparse.ArgumentParser()
-        parser.add_argument(
-            "--api-key-file",
-            type=str,
-            default="secrets/openrouter_api_key.txt",
-        )
-        parser.add_argument(
-            "--base-url",
-            type=str,
-            default="https://openrouter.ai/api/v1",
-        )
-        parser.add_argument(
-            "--model-name",
-            type=str,
-            default="deepseek/deepseek-v3.2",
-        )
-        parser.add_argument(
-            "--embed-model-name",
-            type=str,
-            default="qwen/qwen3-embedding-8b",
-        )
-        parser.add_argument(
-            "--collection-name",
-            type=str,
-            default="llm-lab-naive-rag",
-        )
-        parser.add_argument(
-            "--collection-files-glob",
-            type=str,
-            default="assets/*.pdf",
-        )
-        parser.add_argument(
-            "--force-recreate-collection",
-            action="store_true",
-        )
-        parser.add_argument(
-            "--interactive",
-            action="store_true",
-        )
-        args = parser.parse_args()
-        return cls(**vars(args))
-
-    def load_api_key(self) -> str:
-        try:
-            with open(self.api_key_file, "r", encoding="utf-8") as f:
-                return f.read().strip()
-        except FileNotFoundError:
-            raise FileNotFoundError(f"API key file not found: {self.api_key_file}")
-
-    def get_collection_files(self) -> list[str]:
-        import glob
-
-        files = glob.glob(self.collection_files_glob)
-        if not files:
-            raise ValueError(f"No files found for glob: {self.collection_files_glob}")
-        return files
 
 
 def steam_messages(client: OpenAI, model_name: str, messages: list[dict]):
@@ -137,17 +65,32 @@ def split_text_into_chunks(
     return chunks
 
 
-def setup_collection(args: Args, client: OpenAI):
-    files = args.get_collection_files()
-    print(f"Found {len(files)} files for collection '{args.collection_name}'")
+def get_collection_files(collection_files_glob: str) -> list[str]:
+    import glob
+
+    files = glob.glob(collection_files_glob)
+    if not files:
+        raise ValueError(f"No files found for glob: {collection_files_glob}")
+    return files
+
+
+def setup_collection(
+    client: OpenAI,
+    embed_model_name: str,
+    collection_name: str,
+    collection_files_glob: str,
+    force_recreate_collection: bool,
+):
+    files = get_collection_files(collection_files_glob)
+    print(f"Found {len(files)} files for collection '{collection_name}'")
     print(f"Files: {repr(files)}")
 
-    if args.collection_name in global_vec_db.get_all_keys():
-        if args.force_recreate_collection:
-            print(f"Re-creating collection: {args.collection_name}")
-            global_vec_db.delete_table(args.collection_name)
+    if collection_name in global_vec_db.get_all_keys():
+        if force_recreate_collection:
+            print(f"Re-creating collection: {collection_name}")
+            global_vec_db.delete_table(collection_name)
         else:
-            print(f"Collection already exists: {args.collection_name}")
+            print(f"Collection already exists: {collection_name}")
             return
 
     chunk_info_list: list[dict[str, str]] = []
@@ -181,14 +124,12 @@ def setup_collection(args: Args, client: OpenAI):
         info_line = f"Source: {chunk_info['source']} (Index: {chunk_info['index']})"
         embedding = get_embedding(
             client,
-            args.embed_model_name,
+            embed_model_name,
             f"{info_line}\n\n{chunk_info['text']}",
         )
-        global_vec_db.create_table_if_not_exists(
-            args.collection_name, dim=len(embedding)
-        )
+        global_vec_db.create_table_if_not_exists(collection_name, dim=len(embedding))
         global_vec_db.add(
-            args.collection_name,
+            collection_name,
             embedding,
             chunk_info,
         )
@@ -218,18 +159,24 @@ def preview_string(s: str, length: int = 60) -> str:
         return repr(s[:start_length] + "..." + s[-end_length:])
 
 
-def rag_query(args: Args, client: OpenAI, query: str):
+def rag_query(
+    client: OpenAI,
+    model_name: str,
+    embed_model_name: str,
+    collection_name: str,
+    query: str,
+):
     embedding_instruct = (
         "Given a web search query, retrieve relevant passages that answer the query"
     )
     embeds = get_embedding(
         client,
-        args.embed_model_name,
+        embed_model_name,
         f"Instruct: {embedding_instruct}\nQuery: {query}",
     )
 
     relevant_docs = global_vec_db.search(
-        args.collection_name,
+        collection_name,
         embeds,
         k=5,
     )
@@ -250,25 +197,64 @@ def rag_query(args: Args, client: OpenAI, query: str):
         {"role": "user", "content": prompt},
     ]
     result_parts: list[str] = []
-    for chunk in steam_messages(client, args.model_name, messages):
+    for chunk in steam_messages(client, model_name, messages):
         print(chunk, end="", flush=True)
         result_parts.append(chunk)
     print()
     return "".join(result_parts)
 
 
-def main():
-    args = Args.parse_args()
+def cli(
+    api_key: str = typer.Option(
+        ...,
+        envvar="OPENROUTER_API_KEY",
+        help="OpenRouter API key",
+    ),
+    base_url: str = typer.Option(
+        "https://openrouter.ai/api/v1",
+        help="OpenAI-compatible API base URL",
+    ),
+    model_name: str = typer.Option(
+        "deepseek/deepseek-v3.2",
+        help="Chat model name",
+    ),
+    embed_model_name: str = typer.Option(
+        "qwen/qwen3-embedding-8b",
+        help="Embedding model name",
+    ),
+    collection_name: str = typer.Option(
+        "llm-lab-naive-rag",
+        help="Vector DB collection name",
+    ),
+    collection_files_glob: str = typer.Option(
+        "assets/*.pdf",
+        help="Glob pattern for collection source files",
+    ),
+    force_recreate_collection: bool = typer.Option(
+        False,
+        help="Force re-creating the collection even if it exists",
+    ),
+    interactive: bool = typer.Option(
+        False,
+        help="Run in interactive query mode",
+    ),
+):
     client = OpenAI(
-        base_url=args.base_url,
-        api_key=args.load_api_key(),
+        base_url=base_url,
+        api_key=api_key,
     )
-    setup_collection(args, client)
+    setup_collection(
+        client,
+        embed_model_name,
+        collection_name,
+        collection_files_glob,
+        force_recreate_collection,
+    )
 
-    if not args.interactive:
+    if not interactive:
         example_query = "介绍 MiMo-V2-Flash 使用 MTP 的情况"
         print(f"Example query: {example_query}")
-        rag_query(args, client, example_query)
+        rag_query(client, model_name, embed_model_name, collection_name, example_query)
         return
 
     while True:
@@ -276,7 +262,11 @@ def main():
         if query.lower() == "exit":
             break
         print("Answer:")
-        rag_query(args, client, query)
+        rag_query(client, model_name, embed_model_name, collection_name, query)
+
+
+def main():
+    typer.run(cli)
 
 
 if __name__ == "__main__":
