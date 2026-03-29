@@ -47,8 +47,13 @@ def split_text_into_chunks(
     text: str, chunk_size: int = 1000, overlap: int = 100
 ) -> list[str]:
     assert chunk_size > overlap, "chunk_size must be greater than overlap"
+    from pathlib import Path
+
+    tokenizer_path = Path(__file__).with_name("Qwen3Tokenizer.local.json")
+    if not tokenizer_path.exists():
+        raise ValueError(f"Tokenizer config file not found: {tokenizer_path}")
     tokenizer: tokenizers.Tokenizer = tokenizers.Tokenizer.from_file(
-        "assets/tokenizer.json"
+        str(tokenizer_path)
     )
 
     tokens: list[int] = tokenizer.encode(text).ids
