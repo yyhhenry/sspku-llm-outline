@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import tokenizers
 import typer
+from dotenv import load_dotenv
 from lab_1806_vec_db import VecDB
 from openai import OpenAI
 
@@ -215,7 +216,7 @@ def cli(
         help="OpenAI-compatible API base URL",
     ),
     model_name: str = typer.Option(
-        "deepseek/deepseek-v3.2",
+        "xiaomi/mimo-v2-flash",
         help="Chat model name",
     ),
     embed_model_name: str = typer.Option(
@@ -223,7 +224,7 @@ def cli(
         help="Embedding model name",
     ),
     collection_name: str = typer.Option(
-        "llm-lab-naive-rag",
+        "rag-lab",
         help="Vector DB collection name",
     ),
     collection_files_glob: str = typer.Option(
@@ -233,10 +234,6 @@ def cli(
     force_recreate_collection: bool = typer.Option(
         False,
         help="Force re-creating the collection even if it exists",
-    ),
-    interactive: bool = typer.Option(
-        False,
-        help="Run in interactive query mode",
     ),
 ):
     client = OpenAI(
@@ -251,12 +248,6 @@ def cli(
         force_recreate_collection,
     )
 
-    if not interactive:
-        example_query = "介绍 MiMo-V2-Flash 使用 MTP 的情况"
-        print(f"Example query: {example_query}")
-        rag_query(client, model_name, embed_model_name, collection_name, example_query)
-        return
-
     while True:
         query = input("Enter your query (or 'exit' to quit): ")
         if query.lower() == "exit":
@@ -266,6 +257,7 @@ def cli(
 
 
 def main():
+    load_dotenv()
     typer.run(cli)
 
 
