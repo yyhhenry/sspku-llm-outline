@@ -69,9 +69,80 @@ RAG 技术本质是为大模型配置“外接知识库”，通过“检索-增
 
 ```bash
 curl -L -o Qwen3Tokenizer.local.json "https://huggingface.co/Qwen/Qwen3-8B/resolve/main/tokenizer.json"
-uv run rag_lab.py
+uv run rag_lab.py --no-interactive
 ```
 
 使用 Python 代码来编写简单的 RAG 系统，从 PDF 加载数据，用 tokenizer 来更均匀地进行前面说的滑动窗口切分；随后调用 OpenRouter 上的 Qwen Embedding 8B 作为嵌入模型，然后使用 lab-1806-vec-db 作为向量数据库（建议读者用 Chroma 重新编写），把每一个 chunk 嵌入为向量表示然后存储。
 
 然后在查询阶段，把用户输入与给定的嵌入提示词拼接得到查询向量，找到最接近的 top-k，加入文本大模型的上下文并得到有效的回答。
+
+```
+~/src/sspku-llm-outline/topics/rag$ uv run rag_lab.py --no-interactive
+Found 1 files for collection 'rag-lab'
+Files: ['assets/MiMo-V2-Flash.pdf']
+Split file assets/MiMo-V2-Flash.pdf into 29 chunks
+Total chunks to process: 29
+[1/29] Processed chunk 9 from assets/MiMo-V2-Flash.pdf
+[2/29] Processed chunk 2 from assets/MiMo-V2-Flash.pdf
+[3/29] Processed chunk 25 from assets/MiMo-V2-Flash.pdf
+[4/29] Processed chunk 22 from assets/MiMo-V2-Flash.pdf
+[5/29] Processed chunk 26 from assets/MiMo-V2-Flash.pdf
+[6/29] Processed chunk 20 from assets/MiMo-V2-Flash.pdf
+[7/29] Processed chunk 15 from assets/MiMo-V2-Flash.pdf
+[8/29] Processed chunk 27 from assets/MiMo-V2-Flash.pdf
+[9/29] Processed chunk 18 from assets/MiMo-V2-Flash.pdf
+[10/29] Processed chunk 3 from assets/MiMo-V2-Flash.pdf
+[11/29] Processed chunk 7 from assets/MiMo-V2-Flash.pdf
+[12/29] Processed chunk 5 from assets/MiMo-V2-Flash.pdf
+[13/29] Processed chunk 0 from assets/MiMo-V2-Flash.pdf
+[14/29] Processed chunk 24 from assets/MiMo-V2-Flash.pdf
+[15/29] Processed chunk 8 from assets/MiMo-V2-Flash.pdf
+[16/29] Processed chunk 4 from assets/MiMo-V2-Flash.pdf
+[17/29] Processed chunk 14 from assets/MiMo-V2-Flash.pdf
+[18/29] Processed chunk 17 from assets/MiMo-V2-Flash.pdf
+[19/29] Processed chunk 21 from assets/MiMo-V2-Flash.pdf
+[20/29] Processed chunk 19 from assets/MiMo-V2-Flash.pdf
+[21/29] Processed chunk 28 from assets/MiMo-V2-Flash.pdf
+[22/29] Processed chunk 6 from assets/MiMo-V2-Flash.pdf
+[23/29] Processed chunk 12 from assets/MiMo-V2-Flash.pdf
+[24/29] Processed chunk 11 from assets/MiMo-V2-Flash.pdf
+[25/29] Processed chunk 23 from assets/MiMo-V2-Flash.pdf
+[26/29] Processed chunk 16 from assets/MiMo-V2-Flash.pdf
+[27/29] Processed chunk 10 from assets/MiMo-V2-Flash.pdf
+[28/29] Processed chunk 13 from assets/MiMo-V2-Flash.pdf
+[29/29] Processed chunk 1 from assets/MiMo-V2-Flash.pdf
+Collection setup complete.
+Running sample query: 介绍 MiMo-V2-Flash 使用 MTP 的情况
+Answer:
+Retrieved doc | Source: assets/MiMo-V2-Flash.pdf (Index: 0, Similarity: 0.5801138281822205) | 'MiMo-V2-Flash Technical Report.... 10\n3.2 Hyper-Parameters .'
+Retrieved doc | Source: assets/MiMo-V2-Flash.pdf (Index: 7, Similarity: 0.5707711577415466) | '., 2025). In such scenarios, M...set to 0.001 during Stage 1'
+Retrieved doc | Source: assets/MiMo-V2-Flash.pdf (Index: 1, Similarity: 0.5657748579978943) | ' . 9\n2.3.2 Lightweight MTP Des... workflows (Google DeepMind'
+Retrieved doc | Source: assets/MiMo-V2-Flash.pdf (Index: 3, Similarity: 0.5298640131950378) | '2-Thinking on most reasoning b...ry Positional Embedding (Ro'
+Retrieved doc | Source: assets/MiMo-V2-Flash.pdf (Index: 18, Similarity: 0.5221940279006958) | '(𝑦=4(1−0.58𝑥0.58)) with an𝑅2of...odels. ArXivpreprint , abs/'
+根据提供的技术报告，MiMo-V2-Flash 中使用的 MTP（Multi-Token Prediction，多词元预测）主要体现在以下几个方面：
+
+**1. 轻量化 MTP 设计 (Lightweight MTP Design)**
+为了防止 MTP 成为推理时的瓶颈，MiMo-V2-Flash 采用了一种轻量化的 MTP 结构：
+*   **架构选择**：使用小的**密集前馈网络 (dense FFN)** 而非 MoE（混合专家）架构，以限制参数量。
+*   **注意力机制**：采用**滑动窗口注意力 (SWA)** 而非全局注意力 (GA)，以减少 KV 缓存和注意力计算成本。
+*   **参数规模**：每个 MTP 块的参数量仅为 **0.33B**。
+*   **训练阶段**：
+    *   在**预训练阶段**，仅挂载单个 MTP 头，以避免额外的训练开销。
+    *   在**后训练阶段**，将该头复制 $K$ 次以形成 $K$ 步 MTP 模块，并联合训练所有头部以进行多步预测。每个头部接收主模型的隐藏状态和词元嵌入作为输入，提供更丰富的预测信息。
+
+**2. 预训练中的应用**
+*   **数据与目标**：在预训练的 27 万亿词元中，MiMo-V2-Flash 使用了原生的 32k 上下文长度，并采用了 **MTP 目标**。
+*   **超参数配置**：在预训练期间，模型仅使用**单个 MTP 层**。
+*   **高效扩展**：MTP 增强了注意力和前馈网络 (FFN) 的计算效率，显著降低了整体延迟。
+
+**3. 推理加速 (Speculative Decoding)**
+*   **复用机制**：MiMo-V2-Flash 复用预训练好的 MTP 模块作为**推测解码 (Speculative Decoding)** 的**草稿模型 (Draft Model)**。
+*   **性能提升**：通过这种方式，模型在推理时实现了显著的加速：
+    *   **接受长度**：最高可达 **3.6**。
+    *   **解码速度**：在使用三层 MTP 时，实现了 **2.6 倍** 的解码速度提升（具体数值随批处理大小变化，最高可达 2.7 倍）。
+
+**4. 开源情况**
+小米不仅开源了模型权重，还开源了**三层 MTP 权重**，以促进开放研究和社区协作。
+
+总结来说，MiMo-V2-Flash 通过轻量化的 MTP 设计，在保证模型性能的同时，大幅提升了预训练效率和推理速度。
+```
