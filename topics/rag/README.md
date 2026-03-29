@@ -69,6 +69,7 @@ RAG 技术本质是为大模型配置“外接知识库”，通过“检索-增
 
 ```bash
 curl -L -o Qwen3Tokenizer.local.json "https://huggingface.co/Qwen/Qwen3-8B/resolve/main/tokenizer.json"
+echo "OPENROUTER_API_KEY=your_api_key_here" > .env
 uv run rag_lab.py --no-interactive
 ```
 
