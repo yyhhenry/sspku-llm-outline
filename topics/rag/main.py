@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 from lab_1806_vec_db import VecDB
 from openai import OpenAI
 
-global_vec_db = VecDB("data/vector_db")
-
 
 def steam_messages(client: OpenAI, model_name: str, messages: list[dict]):
     response = client.chat.completions.create(
@@ -76,6 +74,7 @@ def get_collection_files(collection_files_glob: str) -> list[str]:
 
 
 def setup_collection(
+    vec_db: VecDB,
     client: OpenAI,
     embed_model_name: str,
     collection_name: str,
@@ -86,10 +85,10 @@ def setup_collection(
     print(f"Found {len(files)} files for collection '{collection_name}'")
     print(f"Files: {repr(files)}")
 
-    if collection_name in global_vec_db.get_all_keys():
+    if collection_name in vec_db.get_all_keys():
         if force_recreate_collection:
             print(f"Re-creating collection: {collection_name}")
-            global_vec_db.delete_table(collection_name)
+            vec_db.delete_table(collection_name)
         else:
             print(f"Collection already exists: {collection_name}")
             return
@@ -128,8 +127,8 @@ def setup_collection(
             embed_model_name,
             f"{info_line}\n\n{chunk_info['text']}",
         )
-        global_vec_db.create_table_if_not_exists(collection_name, dim=len(embedding))
-        global_vec_db.add(
+        vec_db.create_table_if_not_exists(collection_name, dim=len(embedding))
+        vec_db.add(
             collection_name,
             embedding,
             chunk_info,
@@ -161,6 +160,7 @@ def preview_string(s: str, length: int = 60) -> str:
 
 
 def rag_query(
+    vec_db: VecDB,
     client: OpenAI,
     model_name: str,
     embed_model_name: str,
@@ -176,7 +176,7 @@ def rag_query(
         f"Instruct: {embedding_instruct}\nQuery: {query}",
     )
 
-    relevant_docs = global_vec_db.search(
+    relevant_docs = vec_db.search(
         collection_name,
         embeds,
         k=5,
@@ -235,12 +235,18 @@ def cli(
         False,
         help="Force re-creating the collection even if it exists",
     ),
+    vec_db_path: str = typer.Option(
+        "data/vector_db",
+        help="Path to the vector database directory",
+    ),
 ):
+    vec_db = VecDB(vec_db_path)
     client = OpenAI(
         base_url=base_url,
         api_key=api_key,
     )
     setup_collection(
+        vec_db,
         client,
         embed_model_name,
         collection_name,
@@ -253,7 +259,7 @@ def cli(
         if query.lower() == "exit":
             break
         print("Answer:")
-        rag_query(client, model_name, embed_model_name, collection_name, query)
+        rag_query(vec_db, client, model_name, embed_model_name, collection_name, query)
 
 
 def main():
